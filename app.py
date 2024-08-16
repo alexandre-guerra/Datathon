@@ -1,8 +1,50 @@
+import streamlit as st
 import pandas as pd
-import matplotlib.pyplot as plt
-import plotly.graph_objects as go
 import plotly.express as px
+import plotly.graph_objects as go
+import matplotlib.pyplot as plt
 import plotly.subplots as psub
+
+st.set_page_config(
+    page_title="Desempenho Educacional",
+    layout="wide",
+    page_icon="✨"
+)
+
+st.markdown(""" <style>
+footer {visibility: hidden;}
+h1 {text-align: center;}
+</style> """, unsafe_allow_html=True)
+
+st.markdown(f""" <style>
+    .appview-container .main .block-container{{
+        padding-top: {0}rem;
+        padding-right: {1.5}rem;
+        padding-left: {1.5}rem;
+        padding-bottom: {0}rem;
+    }} </style> """, unsafe_allow_html=True)
+
+st.markdown(f"""
+<style>
+div[data-testid="stMetric"] {{
+  padding-top: {0}rem;
+        padding-right: {5}rem;
+        padding-left: {5}rem;
+        padding-bottom: {0}rem;
+}}
+</style>
+""", unsafe_allow_html=True)
+
+st.markdown(f"""
+<style>
+div[data-testid="column"] {{
+  text-align: center;
+}}
+</style>
+""", unsafe_allow_html=True)
+
+st.title('Análise de Desempenho Educacional - 2020-2022')
+st.divider()
 
 df = pd.read_csv('./PEDE_PASSOS_DATASET_FIAP.csv', delimiter=';')
 
@@ -156,45 +198,36 @@ df_2022.rename(columns={'BOLSISTA': 'BOLSA'}, inplace=True)
 df_2022.drop(columns=['NOTA_PORT', 'NOTA_MAT', 'NOTA_ING', 'QTD_AVAL', 'REC_AVA_1', 'REC_AVA_2', 'REC_AVA_3', 
                       'REC_AVA_4', 'INDICADO_BOLSA', 'NIVEL_IDEAL','CF', 'CG', 'CT', 'DESTAQUE_IDA', 'DESTAQUE_IEG', 'DESTAQUE_IPV'], inplace=True)
 
-# Contando o total de alunos por ano
+
+# Contagem de alunos e variação percentual
 total_alunos_2020 = df_2020['NOME'].nunique()
 total_alunos_2021 = df_2021['NOME'].nunique()
 total_alunos_2022 = df_2022['NOME'].nunique()
 
-# Organizando os dados
 anos = ['2020', '2021', '2022']
 total_alunos = [total_alunos_2020, total_alunos_2021, total_alunos_2022]
 
-# Calculando a variação percentual
-variacao_percentual = [0]  # Não há variação em 2020, pois é o primeiro ano
+variacao_percentual = [0]
 variacao_percentual.append(((total_alunos_2021 - total_alunos_2020) / total_alunos_2020) * 100)
 variacao_percentual.append(((total_alunos_2022 - total_alunos_2021) / total_alunos_2021) * 100)
 
-# Criando o gráfico em Plotly
-fig = go.Figure()
-
-# Adicionando barras para o total de alunos
-fig.add_trace(go.Bar(
+fig_ano = go.Figure()
+fig_ano.add_trace(go.Bar(
     x=anos,
     y=total_alunos,
     text=[f'{v:.2f}%' for v in variacao_percentual],
     textposition='inside',
-    name='Total de Alunos',
-    marker_color='lightgreen'
+    name='Total de Alunos'
 ))
-
-# Configurando o layout do gráfico
-fig.update_layout(
-    title='Total de Alunos por Ano com Variação Percentual',
+fig_ano.update_layout(
+    title='Total de Alunos com Variação Percentual',
     xaxis_title='Ano',
     yaxis_title='Total de Alunos',
     showlegend=False
 )
 
-# Exibindo o gráfico
-fig.show()
+# Gráfico 2: Distribuição de Ingressantes e Veteranos por Ano
 
-# Contagem de ingressantes e veteranos por ano
 ingressantes_2020 = df_2020[df_2020['SINALIZADOR_INGRESSANTE'] == 'Ingressante'].shape[0]
 veteranos_2020 = df_2020[df_2020['SINALIZADOR_INGRESSANTE'] == 'Veterano'].shape[0]
 
@@ -204,28 +237,77 @@ veteranos_2021 = df_2021[df_2021['SINALIZADOR_INGRESSANTE'] == 'Veterano'].shape
 ingressantes_2022 = df_2022[df_2022['SINALIZADOR_INGRESSANTE'] == 'Ingressante'].shape[0]
 veteranos_2022 = df_2022[df_2022['SINALIZADOR_INGRESSANTE'] == 'Veterano'].shape[0]
 
-# Dados para o gráfico
 anos = ['2020', '2021', '2022']
 ingressantes = [ingressantes_2020, ingressantes_2021, ingressantes_2022]
 veteranos = [veteranos_2020, veteranos_2021, veteranos_2022]
 
-# Criando o gráfico de barras empilhadas
-fig = go.Figure(data=[
-    go.Bar(name='Ingressantes', x=anos, y=ingressantes, marker_color='lightskyblue', text=ingressantes, textposition='inside'),
-    go.Bar(name='Veteranos', x=anos, y=veteranos, marker_color='lightcoral', text=veteranos, textposition='inside')
+fig_iv = go.Figure(data=[
+    go.Bar(name='Ingressantes', x=anos, y=ingressantes),
+    go.Bar(name='Veteranos', x=anos, y=veteranos)
 ])
 
-# Customizando o layout
-fig.update_layout(
+fig_iv.update_layout(
     barmode='stack',
-    title='Distribuição de Ingressantes e Veteranos por Ano',
+    title='Distribuição de Ingressantes e Veteranos',
     xaxis_title='Ano',
     yaxis_title='Número de Alunos',
     legend_title='Categoria'
 )
 
+
+# Criando duas colunas para exibir os gráficos lado a lado
+col1, col2 = st.columns(2)
+
+# Exibindo o primeiro gráfico na primeira coluna
+with col1:
+    st.plotly_chart(fig_ano)
+
+# Exibindo o segundo gráfico na segunda coluna
+with col2:
+    st.plotly_chart(fig_iv)
+
+st.divider()
+# Gráfico 4: Distribuição de Alunos em Escolas Públicas vs Particulares (2020-2022)
+
+# Contando o número de alunos de escolas públicas e particulares para cada ano
+publicos_2020 = df_2020[df_2020['INSTITUICAO_ENSINO_ALUNO'] == 'Escola Pública']['NOME'].nunique()
+particulares_2020 = df_2020[df_2020['INSTITUICAO_ENSINO_ALUNO'] == 'Escola Particular']['NOME'].nunique()
+
+publicos_2021 = df_2021[df_2021['INSTITUICAO_ENSINO_ALUNO'] == 'Escola Pública']['NOME'].nunique()
+particulares_2021 = df_2021[df_2021['INSTITUICAO_ENSINO_ALUNO'] == 'Escola Particular']['NOME'].nunique()
+
+publicos_2022 = df_2022[df_2022['INSTITUICAO_ENSINO_ALUNO'] == 'Escola Pública']['NOME'].nunique()
+particulares_2022 = df_2022[df_2022['INSTITUICAO_ENSINO_ALUNO'] == 'Escola Particular']['NOME'].nunique()
+
+# Organizando os dados
+categorias = ['Escola Pública', 'Escola Particular']
+valores_2020 = [publicos_2020, particulares_2020]
+valores_2021 = [publicos_2021, particulares_2021]
+valores_2022 = [publicos_2022, particulares_2022]
+
+# Criando o subplot para 3 gráficos de pizza
+fig_p = psub.make_subplots(rows=1, cols=3, specs=[[{'type':'domain'}, {'type':'domain'}, {'type':'domain'}]],
+                         subplot_titles=['2020', '2021', '2022'])
+
+# Adicionando o gráfico de pizza para 2020
+fig_p.add_trace(go.Pie(labels=categorias, values=valores_2020, name='2020'), 1, 1)
+
+# Adicionando o gráfico de pizza para 2021
+fig_p.add_trace(go.Pie(labels=categorias, values=valores_2021, name='2021'), 1, 2)
+
+# Adicionando o gráfico de pizza para 2022
+fig_p.add_trace(go.Pie(labels=categorias, values=valores_2022, name='2022'), 1, 3)
+
+# Configurando o layout do gráfico
+fig_p.update_layout(
+    title_text='Distribuição de Alunos em Escolas Públicas vs Particulares',
+)
+
 # Exibindo o gráfico
-fig.show()
+st.plotly_chart(fig_p)
+
+st.divider()
+# Gráfico 3: Ingressantes vs Evadidos por Ano
 
 # Primeiro, vamos criar sets dos alunos de cada ano
 alunos_2020 = set(df_2020['NOME'])
@@ -251,10 +333,10 @@ ingressantes = [ingressantes_2020, ingressantes_2021]
 evadidos = [total_desistentes_2020, total_desistentes_2021]
 
 # Criando o gráfico de linhas
-fig = go.Figure()
+fig_ie = go.Figure()
 
 # Linha para ingressantes com os valores em cima das linhas
-fig.add_trace(go.Scatter(
+fig_ie.add_trace(go.Scatter(
     x=anos,
     y=ingressantes,
     mode='lines+markers+text',
@@ -265,7 +347,7 @@ fig.add_trace(go.Scatter(
 ))
 
 # Linha para evadidos com os valores em cima das linhas
-fig.add_trace(go.Scatter(
+fig_ie.add_trace(go.Scatter(
     x=anos,
     y=evadidos,
     mode='lines+markers+text',
@@ -276,53 +358,14 @@ fig.add_trace(go.Scatter(
 ))
 
 # Configurando o layout do gráfico
-fig.update_layout(
+fig_ie.update_layout(
     title='Ingressantes vs Evadidos por Ano',
     xaxis_title='Ano',
     yaxis_title='Número de Alunos',
     showlegend=True
 )
 
-# Exibindo o gráfico
-fig.show()
-
-
-# Contando o número de alunos de escolas públicas e particulares para cada ano
-publicos_2020 = df_2020[df_2020['INSTITUICAO_ENSINO_ALUNO'] == 'Escola Pública']['NOME'].nunique()
-particulares_2020 = df_2020[df_2020['INSTITUICAO_ENSINO_ALUNO'] == 'Escola Particular']['NOME'].nunique()
-
-publicos_2021 = df_2021[df_2021['INSTITUICAO_ENSINO_ALUNO'] == 'Escola Pública']['NOME'].nunique()
-particulares_2021 = df_2021[df_2021['INSTITUICAO_ENSINO_ALUNO'] == 'Escola Particular']['NOME'].nunique()
-
-publicos_2022 = df_2022[df_2022['INSTITUICAO_ENSINO_ALUNO'] == 'Escola Pública']['NOME'].nunique()
-particulares_2022 = df_2022[df_2022['INSTITUICAO_ENSINO_ALUNO'] == 'Escola Particular']['NOME'].nunique()
-
-# Organizando os dados
-categorias = ['Escola Pública', 'Escola Particular']
-valores_2020 = [publicos_2020, particulares_2020]
-valores_2021 = [publicos_2021, particulares_2021]
-valores_2022 = [publicos_2022, particulares_2022]
-
-# Criando o subplot para 3 gráficos de pizza
-fig = psub.make_subplots(rows=1, cols=3, specs=[[{'type':'domain'}, {'type':'domain'}, {'type':'domain'}]],
-                         subplot_titles=['2020', '2021', '2022'])
-
-# Adicionando o gráfico de pizza para 2020
-fig.add_trace(go.Pie(labels=categorias, values=valores_2020, name='2020'), 1, 1)
-
-# Adicionando o gráfico de pizza para 2021
-fig.add_trace(go.Pie(labels=categorias, values=valores_2021, name='2021'), 1, 2)
-
-# Adicionando o gráfico de pizza para 2022
-fig.add_trace(go.Pie(labels=categorias, values=valores_2022, name='2022'), 1, 3)
-
-# Configurando o layout do gráfico
-fig.update_layout(
-    title_text='Distribuição de Alunos em Escolas Públicas vs Particulares (2020-2022)',
-)
-
-# Exibindo o gráfico
-fig.show()
+# Gráfico 5: Distribuição de Bolsistas por Ano
 
 # Identificando alunos que não tinham bolsa em 2020 e ganharam em 2021
 sem_bolsa_2020 = df_2020[df_2020['BOLSA'] == 'Não']['NOME']
@@ -345,18 +388,29 @@ data = {
 df_bolsa= pd.DataFrame(data)
 
 # Criando o gráfico de colunas agrupadas
-fig = px.bar(df_bolsa, x='Ano', y='Alunos que Ganharam Bolsa', 
+fig_bo = px.bar(df_bolsa, x='Ano', y='Alunos que Ganharam Bolsa', 
              text='Alunos que Ganharam Bolsa', 
              title='Número de Alunos que Ganharam Bolsa de Um Ano para o Outro',
              labels={'Alunos que Ganharam Bolsa': 'Quantidade de Alunos'})
 
 # Customizando o layout
-fig.update_traces(textposition='inside')
-fig.update_layout(showlegend=False)
+fig_bo.update_traces(textposition='inside')
+fig_bo.update_layout(showlegend=False)
 
-# Exibindo o gráfico
-fig.show()
+# Criando duas colunas para exibir os gráficos lado a lado
+col1, col2 = st.columns(2)
 
+# Exibindo o primeiro gráfico na primeira coluna
+with col1:
+    st.plotly_chart(fig_ie)
+
+# Exibindo o segundo gráfico na segunda coluna
+with col2:
+    st.plotly_chart(fig_bo)
+
+
+st.divider()
+# Gráfico 6: Distribuição de Alunos por Fase e Ano
 
 # Contando a quantidade de alunos por fase para cada ano
 fase_por_ano_2020 = df_2020.groupby('FASE')['NOME'].count().reset_index()
@@ -374,87 +428,21 @@ fase_por_ano = pd.concat([fase_por_ano_2020, fase_por_ano_2021, fase_por_ano_202
 fase_por_ano.columns = ['Fase', 'Quantidade de Alunos', 'Ano']
 
 # Criando o gráfico de barras empilhadas
-fig = px.bar(fase_por_ano, x='Ano', y='Quantidade de Alunos', color='Fase',
+fig_f = px.bar(fase_por_ano, x='Ano', y='Quantidade de Alunos', color='Fase',
              text='Quantidade de Alunos', 
-             title='Distribuição de Alunos por Fase e Ano',
+             title='Distribuição de Alunos por Fase',
              labels={'Quantidade de Alunos': 'Quantidade', 'Ano': 'Ano', 'Fase': 'Fase'})
 
 # Customizando o layout
-fig.update_traces(textposition='inside', textfont_size=12)
-fig.update_layout(barmode='stack')
+fig_f.update_traces(textposition='inside', textfont_size=12)
+fig_f.update_layout(barmode='stack')
 
 
 # Exibindo o gráfico
-fig.show()
+st.plotly_chart(fig_f)
 
-
-# Contando o número de alunos que atingiram o ponto de virada em cada ano
-ponto_virada_2020 = df_2020[df_2020['PONTO_VIRADA'] == 'Sim']['NOME'].nunique()
-ponto_virada_2021 = df_2021[df_2021['PONTO_VIRADA'] == 'Sim']['NOME'].nunique()
-ponto_virada_2022 = df_2022[df_2022['PONTO_VIRADA'] == 'Sim']['NOME'].nunique()
-
-# Contando o total de alunos em cada ano
-total_alunos_2020 = df_2020['NOME'].nunique()
-total_alunos_2021 = df_2021['NOME'].nunique()
-total_alunos_2022 = df_2022['NOME'].nunique()
-
-# Calculando a porcentagem de alunos que atingiram o ponto de virada
-percentual_virada_2020 = (ponto_virada_2020 / total_alunos_2020) * 100
-percentual_virada_2021 = (ponto_virada_2021 / total_alunos_2021) * 100
-percentual_virada_2022 = (ponto_virada_2022 / total_alunos_2022) * 100
-
-
-# Dados para o gráfico
-anos = ['2020', '2021', '2022']
-ponto_virada = [ponto_virada_2020, ponto_virada_2021, ponto_virada_2022]
-percentual_virada = [percentual_virada_2020, percentual_virada_2021, percentual_virada_2022]
-
-# Criando o gráfico com duplo eixo Y
-fig = go.Figure()
-
-# Adicionando a linha para o número de alunos que atingiram o ponto de virada
-fig.add_trace(go.Scatter(
-    x=anos,
-    y=ponto_virada,
-    mode='lines+markers',
-    name='Número de Alunos',
-    line=dict(color='blue', width=4)
-))
-
-# Adicionando a linha para o percentual de alunos que atingiram o ponto de virada
-fig.add_trace(go.Scatter(
-    x=anos,
-    y=percentual_virada,
-    mode='lines+markers+text',
-    name='Percentual',
-    line=dict(color='red', width=4, dash='dash'),
-    yaxis='y2',
-    text=[f'{p:.2f}%' for p in percentual_virada],
-    textposition='top center'
-))
-
-# Configurando o layout com duplo eixo Y
-fig.update_layout(
-    title='Alunos que Atingiram o Ponto de Virada por Ano',
-    xaxis_title='Ano',
-    yaxis=dict(
-        title='Quantidade de Alunos',
-        titlefont=dict(color='blue'),
-        tickfont=dict(color='blue')
-    ),
-    yaxis2=dict(
-        title='Percentual',
-        titlefont=dict(color='red'),
-        tickfont=dict(color='red'),
-        overlaying='y',
-        side='right'
-    ),
-    legend=dict(x=0.1, y=0.9)
-)
-
-# Exibindo o gráfico
-fig.show()
-
+st.divider()
+# Gráfico 8: Distribuição Percentual de Alunos por Pedra
 
 # Contando a quantidade de alunos por pedra para cada ano
 pedra_por_ano_2020 = df_2020.groupby('PEDRA')['NOME'].count().reset_index()
@@ -495,28 +483,22 @@ pedra_por_ano['Ordem'] = pedra_por_ano['Pedra'].map(valor_pedra)
 pedra_por_ano = pedra_por_ano.sort_values(by='Ordem')
 
 # Criando o gráfico de barras empilhadas com percentuais e ordenado
-fig = px.bar(pedra_por_ano, x='Ano', y='Percentual', color='Pedra',
+fig_pe = px.bar(pedra_por_ano, x='Ano', y='Percentual', color='Pedra',
              text=pedra_por_ano['Percentual'].apply(lambda x: f'{x:.2f}%'), 
-             title='Distribuição Percentual de Alunos por Pedra e Ano (Ordenado)',
+             title='Distribuição Percentual de Alunos por Pedra',
              labels={'Percentual': 'Percentual (%)', 'Ano': 'Ano', 'Pedra': 'Tipo de Pedra'})
 
 # Customizando o layout
-fig.update_traces(textposition='inside', textfont_size=12)
-fig.update_layout(barmode='stack')
+fig_pe.update_traces(textposition='inside', textfont_size=12)
+fig_pe.update_layout(barmode='stack')
 
 # Exibindo o gráfico
-fig.show()
+st.plotly_chart(fig_pe)
 
+st.divider()
+# Gráfico 9: Perfil Médio dos Índices
 
-# Selecionando as colunas dos índices
 indices = ['IAA', 'IEG', 'IPS', 'IDA', 'IPP', 'IPV', 'IAN', 'INDE']
-
-# Calculando a média e o desvio padrão dos índices para cada ano
-descritiva_2020 = df_2020[indices].describe().T[['mean', 'std']]
-descritiva_2021 = df_2021[indices].describe().T[['mean', 'std']]
-descritiva_2022 = df_2022[indices].describe().T[['mean', 'std']]
-
-
 # Criando os dados para cada ano
 radar_data_2020 = df_2020[indices].mean().reset_index()
 radar_data_2020.columns = ['Indicador', 'Média']
@@ -528,30 +510,31 @@ radar_data_2022 = df_2022[indices].mean().reset_index()
 radar_data_2022.columns = ['Indicador', 'Média']
 
 # Criando subplots sem títulos individuais para cada gráfico
-fig = psub.make_subplots(rows=1, cols=3, 
+fig_m = psub.make_subplots(rows=1, cols=3, 
                          specs=[[{'type': 'polar'}, {'type': 'polar'}, {'type': 'polar'}]])
 
 # Adicionando o gráfico de radar para 2020
-fig.add_trace(go.Scatterpolar(r=radar_data_2020['Média'], theta=radar_data_2020['Indicador'], 
+fig_m.add_trace(go.Scatterpolar(r=radar_data_2020['Média'], theta=radar_data_2020['Indicador'], 
                               fill='toself', name='2020'), row=1, col=1)
 
 # Adicionando o gráfico de radar para 2021
-fig.add_trace(go.Scatterpolar(r=radar_data_2021['Média'], theta=radar_data_2021['Indicador'], 
+fig_m.add_trace(go.Scatterpolar(r=radar_data_2021['Média'], theta=radar_data_2021['Indicador'], 
                               fill='toself', name='2021'), row=1, col=2)
 
 # Adicionando o gráfico de radar para 2022
-fig.add_trace(go.Scatterpolar(r=radar_data_2022['Média'], theta=radar_data_2022['Indicador'], 
+fig_m.add_trace(go.Scatterpolar(r=radar_data_2022['Média'], theta=radar_data_2022['Indicador'], 
                               fill='toself', name='2022'), row=1, col=3)
 
 # Configurando o layout do gráfico sem títulos individuais de subplots
-fig.update_layout(title_text='Perfil Médio dos Índices por Ano',
+fig_m.update_layout(title_text='Perfil Médio dos Índices',
                   polar=dict(radialaxis=dict(visible=True)),
                   showlegend=True)
 
 # Exibindo o gráfico
-fig.show()
+st.plotly_chart(fig_m)
 
-
+st.divider()
+# Gráfico 10: Comparação dos Índices ao Longo dos Anos
 
 # Selecionando as colunas dos índices
 indices = ['IAA', 'IEG', 'IPS', 'IDA', 'IPP', 'IPV', 'IAN', 'INDE']
@@ -576,12 +559,76 @@ medias_long = pd.melt(medias_anos, id_vars=['Indicador'],
                       var_name='Ano', value_name='Média')
 
 # Criando o gráfico de linhas para comparar os índices ao longo dos anos
-fig = px.line(medias_long, x='Indicador', y='Média', color='Ano', 
+fig_co = px.line(medias_long, x='Indicador', y='Média', color='Ano', 
               markers=True, title='Comparação dos Índices ao Longo dos Anos')
 
 # Exibindo o gráfico
-fig.show()
+st.plotly_chart(fig_co)
 
+st.divider()
+# Gráfico 7: Alunos que Atingiram o Ponto de Virada
+
+# Contando o número de alunos que atingiram o ponto de virada em cada ano
+ponto_virada_2020 = df_2020[df_2020['PONTO_VIRADA'] == 'Sim']['NOME'].nunique()
+ponto_virada_2021 = df_2021[df_2021['PONTO_VIRADA'] == 'Sim']['NOME'].nunique()
+ponto_virada_2022 = df_2022[df_2022['PONTO_VIRADA'] == 'Sim']['NOME'].nunique()
+
+# Contando o total de alunos em cada ano
+total_alunos_2020 = df_2020['NOME'].nunique()
+total_alunos_2021 = df_2021['NOME'].nunique()
+total_alunos_2022 = df_2022['NOME'].nunique()
+
+# Calculando a porcentagem de alunos que atingiram o ponto de virada
+percentual_virada_2020 = (ponto_virada_2020 / total_alunos_2020) * 100
+percentual_virada_2021 = (ponto_virada_2021 / total_alunos_2021) * 100
+percentual_virada_2022 = (ponto_virada_2022 / total_alunos_2022) * 100
+
+# Dados para o gráfico
+anos = ['2020', '2021', '2022']
+ponto_virada = [ponto_virada_2020, ponto_virada_2021, ponto_virada_2022]
+percentual_virada = [percentual_virada_2020, percentual_virada_2021, percentual_virada_2022]
+
+# Criando o gráfico com duplo eixo Y
+fig_po = go.Figure()
+
+# Adicionando a linha para o número de alunos que atingiram o ponto de virada
+fig_po.add_trace(go.Scatter(
+    x=anos,
+    y=ponto_virada,
+    mode='lines+markers',
+    name='Número de Alunos',
+    line=dict(width=4)
+))
+
+# Adicionando a linha para o percentual de alunos que atingiram o ponto de virada
+fig_po.add_trace(go.Scatter(
+    x=anos,
+    y=percentual_virada,
+    mode='lines+markers+text',
+    name='Percentual',
+    line=dict(width=4, dash='dash'),
+    yaxis='y2',
+    text=[f'{p:.2f}%' for p in percentual_virada],
+    textposition='top center'
+))
+
+# Configurando o layout com duplo eixo Y
+fig_po.update_layout(
+    title='Alunos que Atingiram o Ponto de Virada',
+    xaxis_title='Ano',
+    yaxis=dict(
+        title='Quantidade de Alunos'
+    ),
+    yaxis2=dict(
+        title='Percentual',
+        overlaying='y',
+        side='right'
+    ),
+    legend=dict(x=0.1, y=0.9)
+)
+
+
+# Gráfico 11: Distribuição de Alunos por Nota de Português
 
 # Calculando a média do INDE para cada ano
 media_inde_2020 = df_2020['INDE'].mean()
@@ -601,9 +648,17 @@ data = {
 df_media_inde = pd.DataFrame(data)
 
 # Criando o gráfico de linha para mostrar a evolução do INDE
-fig = px.line(df_media_inde, x='Ano', y='Média INDE', 
+fig_ind = px.line(df_media_inde, x='Ano', y='Média INDE', 
               title='Evolução do INDE ao Longo dos Anos',
               markers=True)
 
-# Exibindo o gráfico
-fig.show()
+# Criando duas colunas para exibir os gráficos lado a lado
+col1, col2 = st.columns(2)
+
+# Exibindo o primeiro gráfico na primeira coluna
+with col1:
+    st.plotly_chart(fig_po)
+
+# Exibindo o segundo gráfico na segunda coluna
+with col2:
+    st.plotly_chart(fig_ind)
