@@ -1,0 +1,3 @@
+Link para o Dashboard: https://datathon-2024.streamlit.app/
+
+Link para o Git Contendo o Notebook com as explicações e o Relatório em PDF: https://github.com/alexandre-guerra/Datathon
